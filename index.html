@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🍪 Cookie Clicker</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px 10px;
+    color: #e0e0e0;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #game {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  h2 {
+    text-align: center;
+    font-size: 26px;
+    color: #f0c040;
+    text-shadow: 0 2px 8px rgba(240,192,64,0.3);
+    margin-bottom: 20px;
+  }
+  .cookie-area {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  #cookie {
+    font-size: 90px;
+    cursor: pointer;
+    display: inline-block;
+    transition: transform 0.05s ease;
+    filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));
+    touch-action: manipulation;
+  }
+  #cookie:active { transform: scale(0.85) !important; }
+  .hint { margin-top: 8px; font-size: 12px; color: #888; }
+  .score-box {
+    background: rgba(255,255,255,0.05);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .score-label { font-size: 14px; color: #aaa; margin-bottom: 4px; }
+  #score {
+    font-size: 36px;
+    font-weight: 700;
+    color: #f0c040;
+  }
+  .cps-info {
+    font-size: 13px;
+    color: #888;
+    margin-top: 4px;
+  }
+  .upgrades-box {
+    background: rgba(255,255,255,0.03);
+    border-radius: 14px;
+    padding: 12px 16px;
+  }
+  .upgrades-title {
+    font-size: 13px;
+    color: #aaa;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  .upgrade-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.05);
+    color: #e0e0e0;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.15s;
+    width: 100%;
+    margin-bottom: 8px;
+    touch-action: manipulation;
+  }
+  .upgrade-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .upgrade-btn:not(:disabled):active {
+    transform: scale(0.97);
+    border-color: #f0c040;
+  }
+  .upgrade-name { display: flex; align-items: center; gap: 6px; }
+  .upgrade-desc { font-size: 11px; color: #888; }
+  .upgrade-cost { font-weight: 700; color: #f0c040; }
+  .upgrade-cost.disabled { color: #888; }
+  .buttons-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 14px;
+  }
+  .small-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #666;
+    padding: 6px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s;
+  }
+  .small-btn:hover { color: #aaa; border-color: rgba(255,255,255,0.2); }
+  .small-btn:active { transform: scale(0.95); }
+  #save-panel {
+    display: none;
+    margin-top: 12px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    padding: 12px;
+  }
+  .save-label {
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 6px;
+  }
+  #save-code {
+    width: 100%;
+    height: 50px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    color: #f0c040;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    padding: 6px;
+    resize: none;
+    outline: none;
+  }
+  .save-buttons {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .save-btn {
+    flex: 1;
+    padding: 5px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    border: none;
+    transition: all 0.15s;
+  }
+  .save-btn.copy {
+    background: rgba(240,192,64,0.15);
+    border: 1px solid rgba(240,192,64,0.3);
+    color: #f0c040;
+  }
+  .save-btn.import {
+    background: rgba(100,200,100,0.15);
+    border: 1px solid rgba(100,200,100,0.3);
+    color: #6c6;
+  }
+  .save-btn:active { transform: scale(0.95); }
+  #copy-msg {
+    font-size: 11px;
+    color: #6c6;
+    text-align: center;
+    margin-top: 4px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .floating-text {
+    position: fixed;
+    color: #f0c040;
+    font-weight: 700;
+    font-size: 18px;
+    pointer-events: none;
+    z-index: 9999;
+    transition: all 0.8s ease-out;
+  }
+  .achievements {
+    margin-top: 12px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 14px;
+    padding: 12px 16px;
+  }
+  .achievements-title {
+    font-size: 13px;
+    color: #aaa;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .achievement {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    font-size: 13px;
+    color: #666;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .achievement.unlocked {
+    color: #f0c040;
+  }
+  .achievement-icon {
+    font-size: 16px;
+    width: 24px;
+    text-align: center;
+  }
+  .stats-row {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 8px;
+    font-size: 11px;
+    color: #666;
+  }
+  .stat-item { text-align: center; }
+  .stat-value { color: #f0c040; font-weight: 600; font-size: 13px; }
+</style>
+</head>
+<body>
+<div id="game">
+  <h2>🍪 Cookie Clicker</h2>
+
+  <div class="cookie-area">
+    <div id="cookie">🍪</div>
+    <div class="hint">Кликни по печеньке!</div>
+  </div>
+
+  <div class="score-box">
+    <div class="score-label">Печенек</div>
+    <div id="score">0</div>
+    <div class="cps-info"><span id="cps">0</span> печенек/сек</div>
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-value" id="total-clicks">0</div>
+        <div>Кликов</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="total-cookies">0</div>
+        <div>Всего</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="play-time">0:00</div>
+        <div>Время</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="upgrades-box">
+    <div class="upgrades-title">🔧 Улучшения</div>
+
+    <button class="upgrade-btn" id="btn-cursor" onclick="buyUpgrade('cursor')">
+      <span class="upgrade-name">🖱️ Курсор <span class="upgrade-desc">(+1/сек)</span></span>
+      <span class="upgrade-cost" id="cost-cursor">15 🍪</span>
+    </button>
+
+    <button class="upgrade-btn" id="btn-grandma" onclick="buyUpgrade('grandma')">
+      <span class="upgrade-name">👵 Бабушка <span class="upgrade-desc">(+5/сек)</span></span>
+      <span class="upgrade-cost" id="cost-grandma">100 🍪</span>
+    </button>
+
+    <button class="upgrade-btn" id="btn-farm" onclick="buyUpgrade('farm')">
+      <span class="upgrade-name">🏭 Фабрика <span class="upgrade-desc">(+25/сек)</span></span>
+      <span class="upgrade-cost" id="cost-farm">500 🍪</span>
+    </button>
+
+    <button class="upgrade-btn" id="btn-mine" onclick="buyUpgrade('mine')">
+      <span class="upgrade-name">⛏️ Шахта <span class="upgrade-desc">(+100/сек)</span></span>
+      <span class="upgrade-cost" id="cost-mine">2000 🍪</span>
+    </button>
+
+    <button class="upgrade-btn" id="btn-click" onclick="buyUpgrade('click')">
+      <span class="upgrade-name">💪 Сила клика <span class="upgrade-desc">(+1 за клик)</span></span>
+      <span class="upgrade-cost" id="cost-click">50 🍪</span>
+    </button>
+  </div>
+
+  <div class="achievements">
+    <div class="achievements-title">🏆 Достижения</div>
+    <div class="achievement" id="ach-1"><span class="achievement-icon">🔓</span> 100 печенек</div>
+    <div class="achievement" id="ach-2"><span class="achievement-icon">🔓</span> 1,000 печенек</div>
+    <div class="achievement" id="ach-3"><span class="achievement-icon">🔓</span> 10,000 печенек</div>
+    <div class="achievement" id="ach-4"><span class="achievement-icon">🔓</span> 100,000 печенек</div>
+    <div class="achievement" id="ach-5"><span class="achievement-icon">🔓</span> 1,000,000 печенек</div>
+    <div class="achievement" id="ach-6"><span class="achievement-icon">🔓</span> 100 кликов</div>
+    <div class="achievement" id="ach-7"><span class="achievement-icon">🔓</span> 1,000 кликов</div>
+  </div>
+
+  <div class="buttons-row">
+    <button class="small-btn" onclick="resetGame()">🔄 Сбросить</button>
+    <button class="small-btn" onclick="exportSave()">📋 Код сохранения</button>
+  </div>
+
+  <div id="save-panel">
+    <div class="save-label">Скопируй этот код — он хранит твой прогресс:</div>
+    <textarea id="save-code" readonly></textarea>
+    <div class="save-buttons">
+      <button class="save-btn copy" onclick="copySave()">📋 Копировать</button>
+      <button class="save-btn import" onclick="importSave()">📥 Загрузить</button>
+    </div>
+    <div id="copy-msg">Скопировано!</div>
+  </div>
+</div>
+
+<script>
+  let cookies = 0;
+  let cps = 0;
+  let clickPower = 1;
+  let totalClicks = 0;
+  let totalCookiesEarned = 0;
+  let startTime = Date.now();
+  let lastSaveTime = Date.now();
+
+  const upgrades = {
+    cursor: { count: 0, baseCost: 15, cps: 1, costMultiplier: 1.15 },
+    grandma: { count: 0, baseCost: 100, cps: 5, costMultiplier: 1.15 },
+    farm: { count: 0, baseCost: 500, cps: 25, costMultiplier: 1.15 },
+    mine: { count: 0, baseCost: 2000, cps: 100, costMultiplier: 1.15 },
+    click: { count: 0, baseCost: 50, clickPower: 1, costMultiplier: 1.5 }
+  };
+
+  const achievements = [
+    { id: 'ach-1', threshold: 100, type: 'cookies', unlocked: false },
+    { id: 'ach-2', threshold: 1000, type: 'cookies', unlocked: false },
+    { id: 'ach-3', threshold: 10000, type: 'cookies', unlocked: false },
+    { id: 'ach-4', threshold: 100000, type: 'cookies', unlocked: false },
+    { id: 'ach-5', threshold: 1000000, type: 'cookies', unlocked: false },
+    { id: 'ach-6', threshold: 100, type: 'clicks', unlocked: false },
+    { id: 'ach-7', threshold: 1000, type: 'clicks', unlocked: false },
+  ];
+
+  function getCost(type) {
+    const u = upgrades[type];
+    return Math.floor(u.baseCost * Math.pow(u.costMultiplier, u.count));
+  }
+
+  function clickCookie() {
+    cookies += clickPower;
+    totalClicks++;
+    totalCookiesEarned += clickPower;
+    updateUI();
+    checkAchievements();
+
+    const cookie = document.getElementById('cookie');
+    cookie.style.transform = 'scale(0.85)';
+    setTimeout(() => cookie.style.transform = 'scale(1)', 80);
+
+    spawnFloatingText('+' + clickPower, cookie);
+    autoSave();
+  }
+
+  function spawnFloatingText(text, target) {
+    const el = document.createElement('div');
+    el.className = 'floating-text';
+    el.textContent = text;
+    const rect = target.getBoundingClientRect();
+    el.style.left = (rect.left + rect.width/2 + (Math.random()*40 - 20)) + 'px';
+    el.style.top = rect.top + 'px';
+    document.body.appendChild(el);
+
+    requestAnimationFrame(() => {
+      el.style.transform = 'translateY(-60px)';
+      el.style.opacity = '0';
+    });
+
+    setTimeout(() => el.remove(), 800);
+  }
+
+  function buyUpgrade(type) {
+    const cost = getCost(type);
+    if (cookies >= cost) {
+      cookies -= cost;
+      upgrades[type].count++;
+      if (type === 'click') {
+        clickPower += upgrades[type].clickPower;
+      } else {
+        recalcCPS();
+      }
+      updateUI();
+      autoSave();
+
+      const btn = document.getElementById('btn-' + type);
+      btn.style.borderColor = '#f0c040';
+      setTimeout(() => btn.style.borderColor = 'rgba(255,255,255,0.08)', 200);
+    }
+  }
+
+  function recalcCPS() {
+    cps = 0;
+    for (const key in upgrades) {
+      if (key !== 'click' && upgrades[key].cps) {
+        cps += upgrades[key].count * upgrades[key].cps;
+      }
+    }
+  }
+
+  function updateUI() {
+    document.getElementById('score').textContent = formatNumber(cookies);
+    document.getElementById('cps').textContent = formatNumber(cps);
+    document.getElementById('total-clicks').textContent = formatNumber(totalClicks);
+    document.getElementById('total-cookies').textContent = formatNumber(totalCookiesEarned);
+
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const mins = Math.floor(elapsed / 60);
+    const secs = elapsed % 60;
+    document.getElementById('play-time').textContent = mins + ':' + String(secs).padStart(2, '0');
+
+    for (const key in upgrades) {
+      const cost = getCost(key);
+      const btn = document.getElementById('btn-' + key);
+      const costEl = document.getElementById('cost-' + key);
+      costEl.textContent = formatNumber(cost) + ' 🍪';
+
+      if (cookies >= cost) {
+        btn.disabled = false;
+        costEl.classList.remove('disabled');
+      } else {
+        btn.disabled = true;
+        costEl.classList.add('disabled');
+      }
+
+      const count = upgrades[key].count;
+      if (count > 0) {
+        const nameEl = btn.querySelector('.upgrade-name');
+        if (!nameEl.querySelector('.count-badge')) {
+          const badge = document.createElement('span');
+          badge.className = 'count-badge';
+          badge.style.cssText = 'background:rgba(240,192,64,0.2);color:#f0c040;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700;margin-left:4px;';
+          nameEl.appendChild(badge);
+        }
+        nameEl.querySelector('.count-badge').textContent = '×' + count;
+      }
+    }
+  }
+
+  function checkAchievements() {
+    let newUnlock = false;
+    for (const ach of achievements) {
+      if (ach.unlocked) continue;
+      const val = ach.type === 'cookies' ? totalCookiesEarned : totalClicks;
+      if (val >= ach.threshold) {
+        ach.unlocked = true;
+        const el = document.getElementById(ach.id);
+        el.classList.add('unlocked');
+        el.querySelector('.achievement-icon').textContent = '🔓';
+        newUnlock = true;
+      }
+    }
+    if (newUnlock) autoSave();
+  }
+
+  function formatNumber(n) {
+    if (n >= 1e15) return (n/1e15).toFixed(2) + 'Q';
+    if (n >= 1e12) return (n/1e12).toFixed(2) + 'T';
+    if (n >= 1e9) return (n/1e9).toFixed(2) + 'B';
+    if (n >= 1e6) return (n/1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+    return Math.floor(n).toString();
+  }
+
+  function getSaveData() {
+    const data = {
+      cookies: cookies,
+      clickPower: clickPower,
+      totalClicks: totalClicks,
+      totalCookiesEarned: totalCookiesEarned,
+      startTime: startTime,
+      upgrades: {},
+      achievements: achievements.map(a => ({ id: a.id, unlocked: a.unlocked }))
+    };
+    for (const key in upgrades) {
+      data.upgrades[key] = upgrades[key].count;
+    }
+    return data;
+  }
+
+  function encodeSave(data) {
+    return btoa(JSON.stringify(data));
+  }
+
+  function decodeSave(str) {
+    try {
+      return JSON.parse(atob(str.trim()));
+    } catch(e) {
+      return null;
+    }
+  }
+
+  function loadSave(data) {
+    if (!data) return;
+    cookies = data.cookies || 0;
+    clickPower = data.clickPower || 1;
+    totalClicks = data.totalClicks || 0;
+    totalCookiesEarned = data.totalCookiesEarned || 0;
+    startTime = data.startTime || Date.now();
+
+    if (data.upgrades) {
+      for (const key in upgrades) {
+        upgrades[key].count = data.upgrades[key] || 0;
+      }
+    }
+
+    if (data.achievements) {
+      for (const savedAch of data.achievements) {
+        const ach = achievements.find(a => a.id === savedAch.id);
+        if (ach) {
+          ach.unlocked = savedAch.unlocked;
+          if (ach.unlocked) {
+            const el = document.getElementById(ach.id);
+            el.classList.add('unlocked');
+            el.querySelector('.achievement-icon').textContent = '🔓';
+          }
+        }
+      }
+    }
+
+    recalcCPS();
+    updateUI();
+  }
+
+  function autoSave() {
+    const now = Date.now();
+    if (now - lastSaveTime < 2000) return;
+    lastSaveTime = now;
+
+    try {
+      const data = getSaveData();
+      const encoded = encodeSave(data);
+      localStorage.setItem('cookieClickerSave_v2', encoded);
+    } catch(e) {}
+  }
+
+  function loadFromStorage() {
+    try {
+      const saved = localStorage.getItem('cookieClickerSave_v2');
+      if (saved) {
+        const data = decodeSave(saved);
+        if (data) loadSave(data);
+      }
+    } catch(e) {}
+  }
+
+  function exportSave() {
+    const panel = document.getElementById('save-panel');
+    const textarea = document.getElementById('save-code');
+    const data = getSaveData();
+    textarea.value = encodeSave(data);
+    panel.style.display = 'block';
+  }
+
+  function copySave() {
+    const textarea = document.getElementById('save-code');
+    textarea.select();
+    document.execCommand('copy');
+    const msg = document.getElementById('copy-msg');
+    msg.style.opacity = '1';
+    setTimeout(() => msg.style.opacity = '0', 1500);
+  }
+
+  function importSave() {
+    const code = prompt('Вставь код сохранения:');
+    if (!code) return;
+    const data = decodeSave(code);
+    if (data) {
+      loadSave(data);
+      autoSave();
+      alert('Сохранение загружено!');
+    } else {
+      alert('Неверный код сохранения');
+    }
+  }
+
+  function resetGame() {
+    if (!confirm('Точно сбросить весь прогресс?')) return;
+    cookies = 0;
+    cps = 0;
+    clickPower = 1;
+    totalClicks = 0;
+    totalCookiesEarned = 0;
+    startTime = Date.now();
+    for (const key in upgrades) {
+      upgrades[key].count = 0;
+    }
+    for (const ach of achievements) {
+      ach.unlocked = false;
+      const el = document.getElementById(ach.id);
+      el.classList.remove('unlocked');
+      el.querySelector('.achievement-icon').textContent = '🔒';
+    }
+    document.querySelectorAll('.count-badge').forEach(b => b.remove());
+    try { localStorage.removeItem('cookieClickerSave_v2'); } catch(e) {}
+    updateUI();
+  }
+
+  document.getElementById('cookie').addEventListener('click', clickCookie);
+
+  setInterval(() => {
+    cookies += cps / 10;
+    totalCookiesEarned += cps / 10;
+    updateUI();
+    checkAchievements();
+    autoSave();
+  }, 100);
+
+  loadFromStorage();
+  updateUI();
+</script>
+</body>
+</html>
